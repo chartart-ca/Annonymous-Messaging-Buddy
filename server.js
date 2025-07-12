@@ -8,8 +8,8 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Configure database file path from environment variable or default to 'database.db'
-const DB_PATH = process.env.DB_PATH || 'database.db';
+// Configure database file path from environment variable or default to Render-compatible path
+const DB_PATH = process.env.DB_PATH || '/opt/render/database.db';
 
 // Initialize SQLite database
 const db = new sqlite3.Database(DB_PATH, (err) => {
@@ -31,6 +31,11 @@ db.serialize(() => {
     message TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+});
+
+// Health check endpoint for Render
+app.get('/health', (req, res) => {
+  res.sendStatus(200);
 });
 
 // Serve index.html for the root route
