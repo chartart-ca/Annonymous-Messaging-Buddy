@@ -69,6 +69,12 @@
       border-color: rgba(0, 0, 0, 0.1);
       color: #1F2937;
     }
+    .notice {
+      color: #FCA5A5;
+      font-size: 0.875rem;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
     @media (max-width: 640px) {
       .glow-button {
         padding: 0.5rem 0.75rem;
@@ -123,6 +129,7 @@
       const [linkUrl, setLinkUrl] = React.useState('');
       const [message, setMessage] = React.useState('');
       const [messages, setMessages] = React.useState([]);
+      const [showNotice, setShowNotice] = React.useState(false);
 
       React.useEffect(() => {
         particlesJS({
@@ -153,6 +160,7 @@
             setLinkUrl(`${BASE_URL}/send/${data.link}`);
             localStorage.setItem('lastLinkId', data.link);
             setView('linkSection');
+            setShowNotice(false);
             handleViewMessages();
           }
         } catch (error) {
@@ -193,27 +201,38 @@
         }
       };
 
-      const handleViewMessages = async () => {
-        try {
-          const response = await fetch(`${BASE_URL}/messages/${linkId}`);
-          const data = await response.json();
-          if (response.status === 404) {
-            alert('Link is invalid or expired. Please create a new link.');
-            setLinkId('');
-            setLinkUrl('');
-            localStorage.removeItem('lastLinkId');
-            setView('home');
-          } else {
-            setMessages(data.messages);
-            if (window.location.pathname === `/send/${linkId}`) setView('viewMessages');
+      const handleViewMessages = async (retries = 2) => {
+        for (let i = 0; i <= retries; i++) {
+          try {
+            const response = await fetch(`${BASE_URL}/messages/${linkId}`, { timeout: 60000 }); // 60-second timeout
+            const data = await response.json();
+            if (response.status === 404) {
+              setShowNotice(true);
+              alert('Link is invalid or expired. Please create a new link.');
+              setLinkId('');
+              setLinkUrl('');
+              localStorage.removeItem('lastLinkId');
+              setView('home');
+              break;
+            } else {
+              setMessages(data.messages);
+              setShowNotice(false);
+              if (window.location.pathname === `/send/${linkId}`) setView('viewMessages');
+              break;
+            }
+          } catch (error) {
+            console.error(`Fetch attempt ${i + 1} failed:`, error);
+            if (i === retries) {
+              setShowNotice(true);
+              alert('Error fetching messages. Please try again or create a new link.');
+              setLinkId('');
+              setLinkUrl('');
+              localStorage.removeItem('lastLinkId');
+              setView('home');
+            } else {
+              await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
+            }
           }
-        } catch (error) {
-          console.error('Error fetching messages:', error);
-          alert('Error fetching messages. Please try again or create a new link.');
-          setLinkId('');
-          setLinkUrl('');
-          localStorage.removeItem('lastLinkId');
-          setView('home');
         }
       };
 
@@ -223,6 +242,11 @@
 
       return (
         <GlassCard>
+          {showNotice && (
+            <div className="notice">
+              Note: Links may expire due to free hosting limits. Create a new link to continue.
+            </div>
+          )}
           {view === 'home' && (
             <div className="space-y-4 animate-slide-in-smooth">
               <h1 className="text-4xl font-bold text-center text-white mb-6">Anonymous Message Hub</h1>
