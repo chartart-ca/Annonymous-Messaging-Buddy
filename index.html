@@ -24,6 +24,39 @@
       left: 0;
       z-index: -1;
     }
+    .glow-button {
+      position: relative;
+      background: rgba(255, 255, 255, 0.1); /* Glass-like background */
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .glow-button::before {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: -5px;
+      right: -5px;
+      bottom: -5px;
+      background: inherit;
+      z-index: -1;
+      box-shadow: 0 0 10px #4A8BDF; /* Blue glow default */
+      transition: box-shadow 0.3s ease;
+    }
+    .glow-button:hover::before {
+      box-shadow: 0 0 15px #4A8BDF, 0 0 30px #A0006D; /* Blue + purple glow on hover */
+    }
+    .glow-button:hover {
+      transform: translateY(-0.125rem); /* Slight lift on hover */
+    }
+    @media (max-width: 640px) {
+      .glow-button {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+      }
+    }
   </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4 relative">
@@ -104,7 +137,7 @@
       const handleCopyLink = () => {
         navigator.clipboard.writeText(linkUrl).then(() => {
           alert('Link copied!');
-        });
+        }).catch((err) => console.error('Error copying link:', err));
       };
 
       const handleSubmitMessage = async () => {
@@ -156,6 +189,10 @@
         }
       };
 
+      const handleButtonHover = (buttonId) => {
+        console.log(`Button hover triggered: ${buttonId}`); // Debug hover
+      };
+
       return (
         <GlassCard>
           {view === 'home' && (
@@ -163,7 +200,8 @@
               <h1 className="text-4xl font-bold text-center text-white mb-6">Anonymous Message Hub</h1>
               <button
                 onClick={handleCreateLink}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg shadow-glow hover:shadow-glow-hover hover:-translate-y-0.5 transition-all duration-300 animate-scale-up"
+                onMouseEnter={() => handleButtonHover('create')}
+                className="glow-button w-full text-white py-3 rounded-lg animate-scale-up"
               >
                 Create Your Anonymous Link
               </button>
@@ -179,13 +217,15 @@
               />
               <button
                 onClick={handleCopyLink}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg shadow-glow hover:shadow-glow-hover hover:-translate-y-0.5 transition-all duration-300"
+                onMouseEnter={() => handleButtonHover('copy')}
+                className="glow-button w-full text-white py-2 rounded-lg"
               >
                 Copy Link
               </button>
               <button
                 onClick={handleViewMessages}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg shadow-glow hover:shadow-glow-hover hover:-translate-y-0.5 transition-all duration-300"
+                onMouseEnter={() => handleButtonHover('view')}
+                className="glow-button w-full text-white py-2 rounded-lg"
               >
                 View Messages
               </button>
@@ -203,7 +243,8 @@
               />
               <button
                 onClick={handleSubmitMessage}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg shadow-glow hover:shadow-glow-hover hover:-translate-y-0.5 transition-all duration-300"
+                onMouseEnter={() => handleButtonHover('send')}
+                className="glow-button w-full text-white py-3 rounded-lg"
               >
                 Send Message
               </button>
@@ -262,12 +303,6 @@
       }
       .animate-scale-up {
         animation: scaleUp 0.5s ease-out forwards;
-      }
-      .shadow-glow {
-        box-shadow: 0 0 10px #4A8BDF;
-      }
-      .shadow-glow-hover {
-        box-shadow: 0 0 15px #4A8BDF, 0 0 30px #A0006D;
       }
       @media (max-width: 640px) {
         .bg-white.bg-opacity-5 {
