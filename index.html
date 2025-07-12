@@ -139,7 +139,8 @@
     window.addEventListener('load', () => {
       const savedLinkId = localStorage.getItem('lastLinkId');
       if (savedLinkId) {
-        linkOutput.value = `/send/${savedLinkId}`; // Relative path
+        const fullUrl = window.location.origin + `/send/${savedLinkId}`;
+        linkOutput.value = fullUrl;
         linkSection.classList.remove('hidden');
         createLinkBtn.classList.add('hidden');
         linkSection.classList.add('fade-in-slow');
@@ -151,7 +152,8 @@
       const response = await fetch('/create-link', { method: 'POST' });
       const data = await response.json();
       if (data.link) {
-        linkOutput.value = `/send/${data.link}`; // Relative path
+        const fullUrl = window.location.origin + `/send/${data.link}`;
+        linkOutput.value = fullUrl;
         localStorage.setItem('lastLinkId', data.link); // Save the linkId
         linkSection.classList.remove('hidden');
         createLinkBtn.classList.add('hidden');
