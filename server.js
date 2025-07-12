@@ -33,6 +33,10 @@ const db = new sqlite3.Database(dbPath, (err) => {
       if (err) console.error('Error checking links table:', err.message);
       else console.log('Initial links in database:', rows.map(row => row.id));
     });
+    db.all(`SELECT link_id FROM messages`, [], (err, rows) => {
+      if (err) console.error('Error checking messages table:', err.message);
+      else console.log('Initial messages in database:', rows.map(row => row.link_id));
+    });
   });
 });
 
@@ -96,8 +100,8 @@ app.get('/messages/:linkId', (req, res) => {
     }
     db.all(`SELECT message, created_at FROM messages WHERE link_id = ? AND created_at >= datetime('now', '-3 days')`, [linkId], (err, rows) => {
       if (err) {
-        console.error('Error fetching messages:', err.message);
-        return res.status(500).json({ error: 'Failed to fetch messages' });
+        console.error('Error fetching messages:', err.message, 'Stack:', new Error().stack);
+        return res.status(500).json({ error: 'Failed to fetch messages', details: err.message });
       }
       console.log(`Fetched ${rows.length} messages for link ${linkId}:`, rows);
       res.json({ messages: rows || [] }); // Ensure response is always an array
