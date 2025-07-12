@@ -30,7 +30,7 @@
   <div id="particles-js"></div>
   <div id="root"></div>
   <script type="text/babel">
-    const BASE_URL = 'https://your-backend-url-here'; // Replace with your actual backend URL
+    const BASE_URL = window.location.origin; // Dynamically set to deployment URL
 
     function GlassCard({ children }) {
       return (
@@ -96,6 +96,7 @@
             setView('linkSection');
           }
         } catch (error) {
+          console.error('Error creating link:', error);
           alert('Error creating link. Please try again.');
         }
       };
@@ -126,6 +127,7 @@
             alert('Failed to send message. Please try again.');
           }
         } catch (error) {
+          console.error('Error sending message:', error);
           alert('Failed to send message due to a network error. Please try again.');
         }
       };
@@ -145,6 +147,7 @@
             setView('viewMessages');
           }
         } catch (error) {
+          console.error('Error fetching messages:', error);
           alert('Error fetching messages. Please try again or create a new link.');
           setLinkId('');
           setLinkUrl('');
