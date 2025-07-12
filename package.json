@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "build": "mkdir -p public && cp index.html public/"
+    "build": "mkdir -p public && cp -v index.html public/ || echo 'Error: Failed to copy index.html to public/'"
   },
   "dependencies": {
     "express": "^4.17.1",
@@ -21,7 +21,7 @@
   },
   "license": "MIT",
   "config": {
-    "port": "env.PORT || 3000",
+    "port": "env.PORT || 10000",
     "db_path": "env.DB_PATH || '/opt/render/database.db'"
   }
 }
