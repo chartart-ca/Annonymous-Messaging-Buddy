@@ -1,8 +1,18 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const { v4: uuidv4 } = require('uuid');
+const cors = require('cors');
+const path = require('path');
 const app = express();
 app.use(express.json());
+app.use(cors()); // Enable CORS (though not strictly needed for same-origin)
+
+// Serve static files (e.g., index.html)
+app.use(express.static(path.join(__dirname)));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+
+// Catch all unmatched routes and serve index.html for client-side routing
+app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // Initialize SQLite database (in-memory for now)
 const db = new sqlite3.Database(':memory:', (err) => {
@@ -16,9 +26,6 @@ db.serialize(() => {
   db.run(`CREATE TABLE links (id TEXT PRIMARY KEY)`);
   db.run(`CREATE TABLE messages (id INTEGER PRIMARY KEY AUTOINCREMENT, link_id TEXT, message TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
 });
-
-// Test root route
-app.get('/', (req, res) => res.send('Hello from Anonymous Message Hub!'));
 
 // Create a new anonymous link
 app.post('/create-link', (req, res) => {
@@ -50,23 +57,20 @@ app.post('/send-message', (req, res) => {
 // Get messages for a link (only show messages from last 3 days)
 app.get('/messages/:linkId', (req, res) => {
   const { linkId } = req.params;
-  db.get(`SELECT id FROM links WHERE id = ?`, [linkId], (err, root) => {
+  db.get(`SELECT id FROM links WHERE id = ?`, [linkId], (err, row) => {
     if (err || !row) {
       return res.status(404).json({ error: 'Invalid link' });
     }
     db.all(`SELECT message, created_at FROM messages WHERE link_id = ? AND created_at >= datetime('now', '-3 days')`, [linkId], (err, rows) => {
       if (err) {
         return res.status(500).json({ error: 'Failed to fetch messages' });
-      }
-      res.json({ messages: rows });
     });
   });
+  res.json({ messages: rows });
 });
 
-// Serve the send message page (optional, handled by frontend routing)
-app.get('/send/:linkId', (req, res) => {
-  res.sendFile(__dirname + '/index.html');
-});
+// Serve the send message page (handled by frontend routing)
+app.get('/send/:linkId', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 const port = process.env.PORT || 3000;
 app.listen(port, '0.0.0.0', () => console.log(`Server running on port ${port}`));
