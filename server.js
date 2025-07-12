@@ -58,7 +58,7 @@ app.post('/send-message', (req, res) => {
   const { linkId, message } = req.body;
   if (!linkId || !message) {
     console.error('Missing linkId or message:', { linkId, message });
-    return res.status(400).json({ error: 'Missing linkId or message' });
+    return res.status(500).json({ error: 'Missing linkId or message' });
   }
   console.log(`Attempting to send message for linkId: ${linkId}`);
   db.get(`SELECT id FROM links WHERE id = ?`, [linkId], (err, row) => {
@@ -87,7 +87,7 @@ app.get('/messages/:linkId', (req, res) => {
   console.log(`Fetching messages for linkId: ${linkId}`);
   db.get(`SELECT id FROM links WHERE id = ?`, [linkId], (err, row) => {
     if (err) {
-      console.error('Database error:', err.message);
+      console.error('Database error during link check:', err.message);
       return res.status(500).json({ error: 'Database error' });
     }
     if (!row) {
@@ -99,8 +99,8 @@ app.get('/messages/:linkId', (req, res) => {
         console.error('Error fetching messages:', err.message);
         return res.status(500).json({ error: 'Failed to fetch messages' });
       }
-      console.log(`Fetched ${rows.length} messages for link ${linkId}`);
-      res.json({ messages: rows });
+      console.log(`Fetched ${rows.length} messages for link ${linkId}:`, rows);
+      res.json({ messages: rows || [] }); // Ensure response is always an array
     });
   });
 });
