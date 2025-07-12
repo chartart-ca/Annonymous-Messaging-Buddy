@@ -15,17 +15,19 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 // Catch all unmatched routes and serve index.html for client-side routing
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
-// Initialize or load database (in-memory with file backup)
+// Initialize or load database (file-based for persistence)
 const dbPath = path.join(__dirname, 'database.db');
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Database connection error:', err.message);
-    return res.status(500).send('Internal Server Error');
+    process.exit(1); // Exit if database fails to initialize
   }
   console.log('Database connected successfully');
   db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS links (id TEXT PRIMARY KEY)`);
-    db.run(`CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, link_id TEXT, message TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+    db.run(`CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, link_id TEXT, message TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`, (err) => {
+      if (err) console.error('Table creation error:', err.message);
+    });
   });
 });
 
@@ -37,7 +39,11 @@ app.post('/create-link', (req, res) => {
       console.error('Error creating link:', err.message);
       return res.status(500).json({ error: 'Failed to create link' });
     }
-    console.log(`Created link: ${linkId}`);
+    console.log(`Link created and inserted: ${linkId}`);
+    db.get(`SELECT id FROM links WHERE id = ?`, [linkId], (err, row) => {
+      if (err || !row) console.error('Verification failed for link:', linkId);
+      else console.log('Link verified in database:', linkId);
+    });
     res.json({ link: linkId });
   });
 });
@@ -46,14 +52,17 @@ app.post('/create-link', (req, res) => {
 app.post('/send-message', (req, res) => {
   const { linkId, message } = req.body;
   if (!linkId || !message) {
+    console.error('Missing linkId or message:', { linkId, message });
     return res.status(400).json({ error: 'Missing linkId or message' });
   }
+  console.log(`Attempting to send message for linkId: ${linkId}`);
   db.get(`SELECT id FROM links WHERE id = ?`, [linkId], (err, row) => {
     if (err) {
       console.error('Database error:', err.message);
       return res.status(500).json({ error: 'Database error' });
     }
     if (!row) {
+      console.error(`Invalid link attempted: ${linkId}`);
       return res.status(404).json({ error: 'Invalid link' });
     }
     db.run(`INSERT INTO messages (link_id, message) VALUES (?, ?)`, [linkId, message], (err) => {
@@ -61,7 +70,7 @@ app.post('/send-message', (req, res) => {
         console.error('Error sending message:', err.message);
         return res.status(500).json({ error: 'Failed to send message' });
       }
-      console.log(`Message sent for link ${linkId}`);
+      console.log(`Message sent for link ${linkId}: ${message}`);
       res.json({ success: true });
     });
   });
@@ -70,19 +79,21 @@ app.post('/send-message', (req, res) => {
 // Get messages for a link (only show messages from last 3 days)
 app.get('/messages/:linkId', (req, res) => {
   const { linkId } = req.params;
+  console.log(`Fetching messages for linkId: ${linkId}`);
   db.get(`SELECT id FROM links WHERE id = ?`, [linkId], (err, row) => {
     if (err) {
       console.error('Database error:', err.message);
       return res.status(500).json({ error: 'Database error' });
     }
     if (!row) {
+      console.error(`Invalid link requested: ${linkId}`);
       return res.status(404).json({ error: 'Invalid link' });
     }
     db.all(`SELECT message, created_at FROM messages WHERE link_id = ? AND created_at >= datetime('now', '-3 days')`, [linkId], (err, rows) => {
       if (err) {
         console.error('Error fetching messages:', err.message);
         return res.status(500).json({ error: 'Failed to fetch messages' });
-      }
+    });
       console.log(`Fetched ${rows.length} messages for link ${linkId}`);
       res.json({ messages: rows });
     });
