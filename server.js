@@ -22,11 +22,16 @@ const db = new sqlite3.Database(dbPath, (err) => {
     console.error('Database connection error:', err.message);
     process.exit(1); // Exit if database fails to initialize
   }
-  console.log('Database connected successfully');
+  console.log('Database connected successfully at:', dbPath);
   db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS links (id TEXT PRIMARY KEY)`);
     db.run(`CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, link_id TEXT, message TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`, (err) => {
       if (err) console.error('Table creation error:', err.message);
+    });
+    // Verify initial table state
+    db.all(`SELECT id FROM links`, [], (err, rows) => {
+      if (err) console.error('Error checking links table:', err.message);
+      else console.log('Initial links in database:', rows.map(row => row.id));
     });
   });
 });
@@ -62,7 +67,7 @@ app.post('/send-message', (req, res) => {
       return res.status(500).json({ error: 'Database error' });
     }
     if (!row) {
-      console.error(`Invalid link attempted: ${linkId}`);
+      console.error(`Invalid link attempted: ${linkId}. Current links:`, db.allSync(`SELECT id FROM links`));
       return res.status(404).json({ error: 'Invalid link' });
     }
     db.run(`INSERT INTO messages (link_id, message) VALUES (?, ?)`, [linkId, message], (err) => {
@@ -86,7 +91,7 @@ app.get('/messages/:linkId', (req, res) => {
       return res.status(500).json({ error: 'Database error' });
     }
     if (!row) {
-      console.error(`Invalid link requested: ${linkId}`);
+      console.error(`Invalid link requested: ${linkId}. Current links:`, db.allSync(`SELECT id FROM links`));
       return res.status(404).json({ error: 'Invalid link' });
     }
     db.all(`SELECT message, created_at FROM messages WHERE link_id = ? AND created_at >= datetime('now', '-3 days')`, [linkId], (err, rows) => {
