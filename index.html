@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anonymous Message Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+      font-family: 'Orbitron', sans-serif;
+      overflow: hidden;
+    }
+    #particles-js {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+    }
+    @keyframes slideInSmooth {
+      from { transform: translateY(30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .animate-slide-in-smooth {
+      animation: slideInSmooth 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes scaleUp {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .animate-scale-up {
+      animation: scaleUp 0.5s ease-out forwards;
+    }
+    .glow-button {
+      transition: all 0.3s ease;
+      box-shadow: 0 0 10px #4A8BDF; /* Default blue glow */
+    }
+    .glow-button:hover {
+      box-shadow: 0 0 15px #4A8BDF, 0 0 30px #A0006D; /* Enhanced blue with purple glow on hover */
+      transform: translateY(-2px);
+    }
+    .message-card {
+      background: rgba(74, 74, 74, 0.3);
+      border: 1px solid rgba(74, 139, 223, 0.3);
+      border-radius: 10px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    .message-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(74, 139, 223, 0.4);
+    }
+    .fade-in-slow {
+      animation: fadeInSlow 0.8s ease-in-out;
+    }
+    @keyframes fadeInSlow {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @media (max-width: 640px) {
+      .glass-card {
+        padding: 1rem;
+      }
+      .message-card {
+        font-size: 0.9rem;
+        padding: 0.75rem;
+      }
+      textarea {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+  <script>
+    particlesJS({
+      particles: {
+        number: { value: 80, density: { enable: true, value_area: 800 } },
+        color: { value: '#4A8BDF' },
+        shape: { type: 'circle' },
+        opacity: { value: 0.5, random: true },
+        size: { value: 3, random: true },
+        line_linked: { enable: false },
+        move: { enable: true, speed: 1, direction: 'none', random: true }
+      },
+      interactivity: { detect_on: 'canvas', events: { onhover: { enable: false } } }
+    });
+  </script>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 relative">
+  <div id="particles-js"></div>
+  <div class="max-w-xl w-full glass-card p-6 space-y-6 shadow-lg">
+    <h1 class="text-4xl font-bold text-center text-white mb-6 animate-slide-in-smooth">Anonymous Message Hub</h1>
+    <div id="home" class="space-y-4">
+      <button id="createLink" class="w-full bg-nebula-blue text-white py-3 rounded-lg glow-button animate-scale-up">Create Your Anonymous Link</button>
+      <div id="linkSection" class="hidden text-center space-y-2">
+        <p class="text-lg text-white">Share this link on your status/stories:</p>
+        <input id="linkOutput" class="w-full p-3 bg-meteor-gray text-gray-300 border border-nebula-blue rounded-lg text-center focus:outline-none" readonly>
+        <button id="copyLink" class="w-full bg-nebula-blue text-white py-2 rounded-lg glow-button mt-2">Copy Link</button>
+        <button id="viewMessages" class="w-full bg-nebula-blue text-white py-2 rounded-lg glow-button mt-2">View Messages</button>
+      </div>
+    </div>
+    <div id="sendMessage" class="hidden space-y-4">
+      <h2 class="text-2xl font-semibold text-center text-gray-300">Send an Anonymous Message</h2>
+      <textarea id="messageInput" class="w-full p-4 bg-meteor-gray text-gray-300 border border-nebula-blue rounded-lg placeholder-gray-400 focus:outline-none" placeholder="Type your anonymous message..." rows="4"></textarea>
+      <button id="submitMessage" class="w-full bg-nebula-blue text-white py-3 rounded-lg glow-button">Send Message</button>
+      <button id="backToHome" class="w-full bg-meteor-gray text-white py-3 rounded-lg hover:bg-gray-600 transition duration-300">Back</button>
+    </div>
+    <div id="viewMessagesSection" class="hidden space-y-4">
+      <h2 class="text-2xl font-semibold text-center text-white">Your Messages</h2>
+      <div id="messagesList" class="space-y-4"></div>
+      <button id="backToHomeFromMessages" class="w-full bg-meteor-gray text-white py-3 rounded-lg hover:bg-gray-600 transition duration-300">Back</button>
+    </div>
+    <marquee behavior="scroll" direction="left" class="text-gray-400 text-sm mt-4">Powered by Anaypaji Solutions</marquee>
+  </div>
+  <script>
+    const createLinkBtn = document.getElementById('createLink');
+    const linkSection = document.getElementById('linkSection');
+    const linkOutput = document.getElementById('linkOutput');
+    const copyLinkBtn = document.getElementById('copyLink');
+    const viewMessagesBtn = document.getElementById('viewMessages');
+    const sendMessageSection = document.getElementById('sendMessage');
+    const homeSection = document.getElementById('home');
+    const messageInput = document.getElementById('messageInput');
+    const submitMessageBtn = document.getElementById('submitMessage');
+    const backToHomeBtn = document.getElementById('backToHome');
+    const viewMessagesSection = document.getElementById('viewMessagesSection');
+    const messagesList = document.getElementById('messagesList');
+    const backToHomeFromMessagesBtn = document.getElementById('backToHomeFromMessages');
+
+    // Load last link from localStorage on page load
+    window.addEventListener('load', () => {
+      const savedLinkId = localStorage.getItem('lastLinkId');
+      if (savedLinkId) {
+        linkOutput.value = `https://59199afe-bf68-470a-b3ce-caaae340ab85-00-adzxqbsrauj7.kirk.replit.dev/send/${savedLinkId}`;
+        linkSection.classList.remove('hidden');
+        createLinkBtn.classList.add('hidden');
+        linkSection.classList.add('fade-in-slow');
+      }
+    });
+
+    // Generate unique link
+    createLinkBtn.addEventListener('click', async () => {
+      const response = await fetch('https://59199afe-bf68-470a-b3ce-caaae340ab85-00-adzxqbsrauj7.kirk.replit.dev/create-link', { method: 'POST' });
+      const data = await response.json();
+      if (data.link) {
+        linkOutput.value = `https://59199afe-bf68-470a-b3ce-caaae340ab85-00-adzxqbsrauj7.kirk.replit.dev/send/${data.link}`;
+        localStorage.setItem('lastLinkId', data.link); // Save the linkId
+        linkSection.classList.remove('hidden');
+        createLinkBtn.classList.add('hidden');
+        linkSection.classList.add('fade-in-slow');
+      }
+    });
+
+    // Copy link to clipboard
+    copyLinkBtn.addEventListener('click', () => {
+      linkOutput.select();
+      document.execCommand('copy');
+      alert('Link copied!');
+    });
+
+    // Check if on send message page
+    const path = window.location.pathname;
+    if (path.startsWith('/send/')) {
+      homeSection.classList.add('hidden');
+      sendMessageSection.classList.remove('hidden');
+      sendMessageSection.classList.add('fade-in-slow');
+    }
+
+    // Submit anonymous message
+    submitMessageBtn.addEventListener('click', async () => {
+      const message = messageInput.value.trim();
+      if (!message) {
+        alert('Please enter a message!');
+        return;
+      }
+      const linkId = path.split('/send/')[1];
+      try {
+        const response = await fetch('https://59199afe-bf68-470a-b3ce-caaae340ab85-00-adzxqbsrauj7.kirk.replit.dev/send-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ linkId, message })
+        });
+        const data = await response.json();
+        if (data.success) {
+          alert('Message sent!');
+          messageInput.value = '';
+        } else {
+          alert('Failed to send message. Please try again.');
+        }
+      } catch (error) {
+        alert('Failed to send message due to a network error. Please try again.');
+      }
+    });
+
+    // View messages
+    viewMessagesBtn.addEventListener('click', async () => {
+      const linkId = linkOutput.value.split('/send/')[1];
+      try {
+        const response = await fetch(`https://59199afe-bf68-470a-b3ce-caaae340ab85-00-adzxqbsrauj7.kirk.replit.dev/messages/${linkId}`);
+        const data = await response.json();
+        messagesList.innerHTML = '';
+        if (response.status === 404) {
+          alert('Link is invalid or expired. Please create a new link.');
+          linkSection.classList.add('hidden');
+          createLinkBtn.classList.remove('hidden');
+          localStorage.removeItem('lastLinkId'); // Clear invalid link
+        } else if (data.messages.length === 0) {
+          messagesList.innerHTML = '<p class="text-gray-300">No messages yet.</p>';
+        } else {
+          data.messages.forEach((msg, index) => {
+            const msgElement = document.createElement('div');
+            msgElement.className = 'message-card p-4 animate-slide-in-smooth';
+            msgElement.style.animationDelay = `${index * 0.15}s`;
+            msgElement.innerHTML = `<p class="text-gray-300 whitespace-pre-wrap">${msg.message}</p><p class="text-sm text-gray-400">${new Date(msg.created_at).toLocaleString()}</p>`;
+            messagesList.appendChild(msgElement);
+          });
+        }
+      } catch (error) {
+        alert('Error fetching messages. Please try again or create a new link.');
+        linkSection.classList.add('hidden');
+        createLinkBtn.classList.remove('hidden');
+        localStorage.removeItem('lastLinkId'); // Clear on error
+      }
+      homeSection.classList.add('hidden');
+      viewMessagesSection.classList.remove('hidden');
+      viewMessagesSection.classList.add('fade-in-slow');
+    });
+
+    // Back buttons
+    backToHomeBtn.addEventListener('click', () => {
+      sendMessageSection.classList.add('hidden');
+      homeSection.classList.remove('hidden');
+      homeSection.classList.add('fade-in-slow');
+    });
+    backToHomeFromMessagesBtn.addEventListener('click', () => {
+      viewMessagesSection.classList.add('hidden');
+      homeSection.classList.remove('hidden');
+      homeSection.classList.add('fade-in-slow');
+    });
+  </script>
+</body>
+</html>
