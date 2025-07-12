@@ -13,13 +13,13 @@ const publicPath = path.join(__dirname, 'public');
 console.log(`Serving static files from: ${publicPath}`);
 app.use(express.static(publicPath));
 
-// Configure database file path from environment variable or default to Render-compatible path
+// Configure database file path
 const DB_PATH = process.env.DB_PATH || '/opt/render/database.db';
 
 // Initialize SQLite database
 const db = new sqlite3.Database(DB_PATH, (err) => {
   if (err) {
-    console.error('Database connection error:', err.message);
+    console.error('Database connection error:', err.message, err.stack);
   } else {
     console.log('Database connected successfully');
   }
@@ -35,13 +35,13 @@ db.serialize(() => {
     link_id TEXT,
     message TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
+  )`, (err) => {
+    if (err) console.error('Table creation error:', err.message, err.stack);
+  });
 });
 
-// Health check endpoint for Render
-app.get('/health', (req, res) => {
-  res.sendStatus(200);
-});
+// Health check endpoint
+app.get('/health', (req, res) => res.status(200).send('OK'));
 
 // Serve index.html for the root route
 app.get('/', (req, res) => {
@@ -49,7 +49,7 @@ app.get('/', (req, res) => {
   console.log(`Attempting to serve: ${filePath}`);
   fs.access(filePath, fs.constants.F_OK, (err) => {
     if (err) {
-      console.error(`File not found: ${filePath}`, err.message);
+      console.error(`File not found: ${filePath}`, err.message, err.stack);
       return res.status(404).send('index.html not found');
     }
     res.sendFile(filePath);
@@ -61,7 +61,7 @@ app.post('/create-link', (req, res) => {
   const linkId = uuidv4();
   db.run(`INSERT INTO links (id) VALUES (?)`, [linkId], (err) => {
     if (err) {
-      console.error('Error creating link:', err.message);
+      console.error('Error creating link:', err.message, err.stack);
       return res.status(500).json({ error: 'Failed to create link' });
     }
     res.json({ link: linkId });
@@ -75,12 +75,16 @@ app.post('/send-message', (req, res) => {
     return res.status(400).json({ error: 'Invalid message' });
   }
   db.get(`SELECT id FROM links WHERE id = ?`, [linkId], (err, row) => {
-    if (err || !row) {
+    if (err) {
+      console.error('Error checking link:', err.message, err.stack);
+      return res.status(500).json({ error: 'Server error' });
+    }
+    if (!row) {
       return res.status(404).json({ error: 'Invalid link' });
     }
     db.run(`INSERT INTO messages (link_id, message) VALUES (?, ?)`, [linkId, message], (err) => {
       if (err) {
-        console.error('Error sending message:', err.message);
+        console.error('Error sending message:', err.message, err.stack);
         return res.status(500).json({ error: 'Failed to send message' });
       }
       res.json({ success: true });
@@ -88,16 +92,20 @@ app.post('/send-message', (req, res) => {
   });
 });
 
-// Get messages for a link (limited to last 3 days)
+// Get messages
 app.get('/messages/:linkId', (req, res) => {
   const { linkId } = req.params;
   db.get(`SELECT id FROM links WHERE id = ?`, [linkId], (err, row) => {
-    if (err || !row) {
+    if (err) {
+      console.error('Error checking link existence:', err.message, err.stack);
+      return res.status(500).json({ error: 'Server error' });
+    }
+    if (!row) {
       return res.status(404).json({ error: 'Invalid link' });
     }
     db.all(`SELECT message, created_at FROM messages WHERE link_id = ? AND created_at >= datetime('now', '-3 days')`, [linkId], (err, rows) => {
       if (err) {
-        console.error('Error fetching messages:', err.message);
+        console.error('Error fetching messages:', err.message, err.stack);
         return res.status(500).json({ error: 'Failed to fetch messages' });
       }
       res.json({ messages: rows });
@@ -111,22 +119,22 @@ app.get('/send/:linkId', (req, res) => {
   console.log(`Attempting to serve: ${filePath}`);
   fs.access(filePath, fs.constants.F_OK, (err) => {
     if (err) {
-      console.error(`File not found: ${filePath}`, err.message);
+      console.error(`File not found: ${filePath}`, err.message, err.stack);
       return res.status(404).send('index.html not found');
     }
     res.sendFile(filePath);
   });
 });
 
-// Start server on configurable port
+// Start server
 const port = process.env.PORT || 10000;
 app.listen(port, () => console.log(`Server running on port ${port}`));
 
-// Handle process termination to close database connection
+// Handle process termination
 process.on('SIGINT', () => {
   db.close((err) => {
     if (err) {
-      console.error('Database close error:', err.message);
+      console.error('Database close error:', err.message, err.stack);
     }
     console.log('Database connection closed.');
     process.exit(0);
