@@ -4,7 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Anonymous Message Hub</title>
+  <!-- Disable Tailwind dark mode and enforce custom styles -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'false', // Disable prefers-color-scheme
+    };
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
@@ -15,6 +21,11 @@
       background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
       font-family: 'Orbitron', sans-serif;
       overflow: hidden;
+      color: #D1D5DB; /* Default text color for readability */
+    }
+    body.light-mode {
+      background: linear-gradient(135deg, #F9FAFB 0%, #E5E7EB 100%);
+      color: #1F2937; /* Dark text for light background */
     }
     #particles-js {
       position: fixed;
@@ -26,9 +37,9 @@
     }
     .glow-button {
       position: relative;
-      background: rgba(255, 255, 255, 0.1); /* Glass-like background */
+      background: rgba(255, 255, 255, 0.1);
       border: 1px solid rgba(255, 255, 255, 0.2);
-      color: white;
+      color: #D1D5DB; /* Match body text */
       padding: 0.75rem 1rem;
       border-radius: 0.5rem;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -42,14 +53,22 @@
       bottom: -5px;
       background: inherit;
       z-index: -1;
-      box-shadow: 0 0 10px #4A8BDF; /* Blue glow default */
+      box-shadow: 0 0 10px #4A8BDF;
       transition: box-shadow 0.3s ease;
     }
     .glow-button:hover::before {
-      box-shadow: 0 0 15px #4A8BDF, 0 0 30px #A0006D; /* Blue + purple glow on hover */
+      box-shadow: 0 0 15px #4A8BDF, 0 0 30px #A0006D;
     }
     .glow-button:hover {
-      transform: translateY(-0.125rem); /* Slight lift on hover */
+      transform: translateY(-0.125rem);
+    }
+    .glass-card {
+      max-w-xl w-full bg-white bg-opacity-5 backdrop-blur-lg border border-white border-opacity-10 rounded-2xl p-6 space-y-6 shadow-lg;
+    }
+    .glass-card.light-mode {
+      background: rgba(255, 255, 255, 0.8);
+      border-color: rgba(0, 0, 0, 0.1);
+      color: #1F2937;
     }
     @media (max-width: 640px) {
       .glow-button {
@@ -63,11 +82,20 @@
   <div id="particles-js"></div>
   <div id="root"></div>
   <script type="text/babel">
-    const BASE_URL = window.location.origin; // Dynamically set to deployment URL
+    const BASE_URL = window.location.origin;
 
     function GlassCard({ children }) {
+      const [isLightMode, setIsLightMode] = React.useState(false);
+      React.useEffect(() => {
+        const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+        setIsLightMode(prefersLight);
+        const handler = (e) => setIsLightMode(e.matches);
+        window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', handler);
+        return () => window.matchMedia('(prefers-color-scheme: light)').removeEventListener('change', handler);
+      }, []);
+
       return (
-        <div className="max-w-xl w-full bg-white bg-opacity-5 backdrop-blur-lg border border-white border-opacity-10 rounded-2xl p-6 space-y-6 shadow-lg">
+        <div className={`glass-card ${isLightMode ? 'light-mode' : ''}`}>
           {children}
         </div>
       );
@@ -190,7 +218,7 @@
       };
 
       const handleButtonHover = (buttonId) => {
-        console.log(`Button hover triggered: ${buttonId}`); // Debug hover
+        console.log(`Button hover triggered: ${buttonId}`);
       };
 
       return (
@@ -201,7 +229,7 @@
               <button
                 onClick={handleCreateLink}
                 onMouseEnter={() => handleButtonHover('create')}
-                className="glow-button w-full text-white py-3 rounded-lg animate-scale-up"
+                className="glow-button w-full py-3 rounded-lg animate-scale-up"
               >
                 Create Your Anonymous Link
               </button>
@@ -209,7 +237,7 @@
           )}
           {view === 'linkSection' && (
             <div className="space-y-4 animate-[fadeInSlow_0.8s_ease-in-out]">
-              <p className="text-lg text-white text-center">Share this link on your status/stories:</p>
+              <p className="text-lg text-center">Share this link on your status/stories:</p>
               <input
                 value={linkUrl}
                 readOnly
@@ -218,14 +246,14 @@
               <button
                 onClick={handleCopyLink}
                 onMouseEnter={() => handleButtonHover('copy')}
-                className="glow-button w-full text-white py-2 rounded-lg"
+                className="glow-button w-full py-2 rounded-lg"
               >
                 Copy Link
               </button>
               <button
                 onClick={handleViewMessages}
                 onMouseEnter={() => handleButtonHover('view')}
-                className="glow-button w-full text-white py-2 rounded-lg"
+                className="glow-button w-full py-2 rounded-lg"
               >
                 View Messages
               </button>
@@ -244,7 +272,7 @@
               <button
                 onClick={handleSubmitMessage}
                 onMouseEnter={() => handleButtonHover('send')}
-                className="glow-button w-full text-white py-3 rounded-lg"
+                className="glow-button w-full py-3 rounded-lg"
               >
                 Send Message
               </button>
