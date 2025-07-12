@@ -9,10 +9,9 @@
     "build": "mkdir -p public && cp -v index.html public/ || echo 'Error: Failed to copy index.html to public/'"
   },
   "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.18.2",
-    "sqlite3": "^5.1.6",
-    "uuid": "^9.0.1"
+    "express": "^4.17.1",
+    "sqlite3": "^5.0.2",
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
@@ -20,5 +19,9 @@
   "engines": {
     "node": ">=14.0.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "config": {
+    "port": "env.PORT || 10000",
+    "db_path": "env.DB_PATH || '/opt/render/database.db'"
+  }
 }
