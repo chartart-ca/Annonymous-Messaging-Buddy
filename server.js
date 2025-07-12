@@ -93,7 +93,7 @@ app.get('/messages/:linkId', (req, res) => {
       if (err) {
         console.error('Error fetching messages:', err.message);
         return res.status(500).json({ error: 'Failed to fetch messages' });
-    });
+      }
       console.log(`Fetched ${rows.length} messages for link ${linkId}`);
       res.json({ messages: rows });
     });
