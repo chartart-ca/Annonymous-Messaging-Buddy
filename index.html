@@ -4,11 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Anonymous Message Hub</title>
-  <!-- Disable Tailwind dark mode and enforce custom styles -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
-      darkMode: 'false', // Disable prefers-color-scheme
+      darkMode: 'false',
     };
   </script>
   <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
@@ -21,11 +20,11 @@
       background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
       font-family: 'Orbitron', sans-serif;
       overflow: hidden;
-      color: #D1D5DB; /* Default text color for readability */
+      color: #D1D5DB;
     }
     body.light-mode {
       background: linear-gradient(135deg, #F9FAFB 0%, #E5E7EB 100%);
-      color: #1F2937; /* Dark text for light background */
+      color: #1F2937;
     }
     #particles-js {
       position: fixed;
@@ -39,7 +38,7 @@
       position: relative;
       background: rgba(255, 255, 255, 0.1);
       border: 1px solid rgba(255, 255, 255, 0.2);
-      color: #D1D5DB; /* Match body text */
+      color: #D1D5DB;
       padding: 0.75rem 1rem;
       border-radius: 0.5rem;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -63,7 +62,7 @@
       transform: translateY(-0.125rem);
     }
     .glass-card {
-      max-w-xl w-full bg-white bg-opacity-5 backdrop-blur-lg border border-white border-opacity-10 rounded-2xl p-6 space-y-6 shadow-lg;
+      max-width: 28rem; width: 100%; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 0.5rem; padding: 1.5rem; space-y-6; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
     .glass-card.light-mode {
       background: rgba(255, 255, 255, 0.8);
@@ -114,12 +113,16 @@
     }
 
     function AnonymousMessageHub() {
-      const [view, setView] = React.useState('home');
+      const [view, setView] = React.useState(() => {
+        const path = window.location.pathname;
+        const storedLinkId = localStorage.getItem('lastLinkId');
+        if (path.startsWith('/send/')) return 'sendMessage';
+        return storedLinkId ? 'linkSection' : 'home';
+      });
       const [linkId, setLinkId] = React.useState(localStorage.getItem('lastLinkId') || '');
       const [linkUrl, setLinkUrl] = React.useState('');
       const [message, setMessage] = React.useState('');
       const [messages, setMessages] = React.useState([]);
-      const path = window.location.pathname;
 
       React.useEffect(() => {
         particlesJS({
@@ -137,24 +140,20 @@
 
         if (linkId) {
           setLinkUrl(`${BASE_URL}/send/${linkId}`);
+          if (view === 'linkSection') handleViewMessages();
         }
-
-        if (path.startsWith('/send/')) {
-          setView('sendMessage');
-        }
-      }, [linkId, path]);
+      }, [linkId, view]);
 
       const handleCreateLink = async () => {
         try {
-          const response = await fetch(`${BASE_URL}/create-link`, {
-            method: 'POST'
-          });
+          const response = await fetch(`${BASE_URL}/create-link`, { method: 'POST' });
           const data = await response.json();
           if (data.link) {
             setLinkId(data.link);
             setLinkUrl(`${BASE_URL}/send/${data.link}`);
             localStorage.setItem('lastLinkId', data.link);
             setView('linkSection');
+            handleViewMessages();
           }
         } catch (error) {
           console.error('Error creating link:', error);
@@ -173,7 +172,7 @@
           alert('Please enter a message!');
           return;
         }
-        const linkId = path.split('/send/')[1];
+        const linkId = window.location.pathname.split('/send/')[1];
         try {
           const response = await fetch(`${BASE_URL}/send-message`, {
             method: 'POST',
@@ -184,6 +183,7 @@
           if (data.success) {
             alert('Message sent!');
             setMessage('');
+            if (window.location.pathname === '/') handleViewMessages();
           } else {
             alert('Failed to send message. Please try again.');
           }
@@ -205,7 +205,7 @@
             setView('home');
           } else {
             setMessages(data.messages);
-            setView('viewMessages');
+            if (window.location.pathname === `/send/${linkId}`) setView('viewMessages');
           }
         } catch (error) {
           console.error('Error fetching messages:', error);
