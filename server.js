@@ -2,11 +2,16 @@ const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
+const fs = require('fs');
 
 // Initialize Express app
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+
+// Log static file path for debugging
+const publicPath = path.join(__dirname, 'public');
+console.log(`Serving static files from: ${publicPath}`);
+app.use(express.static(publicPath));
 
 // Configure database file path from environment variable or default to Render-compatible path
 const DB_PATH = process.env.DB_PATH || '/opt/render/database.db';
@@ -40,7 +45,15 @@ app.get('/health', (req, res) => {
 
 // Serve index.html for the root route
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  const filePath = path.join(__dirname, 'public', 'index.html');
+  console.log(`Attempting to serve: ${filePath}`);
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+    if (err) {
+      console.error(`File not found: ${filePath}`, err.message);
+      return res.status(404).send('index.html not found');
+    }
+    res.sendFile(filePath);
+  });
 });
 
 // Create a new anonymous link
@@ -94,11 +107,19 @@ app.get('/messages/:linkId', (req, res) => {
 
 // Serve the send message page
 app.get('/send/:linkId', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  const filePath = path.join(__dirname, 'public', 'index.html');
+  console.log(`Attempting to serve: ${filePath}`);
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+    if (err) {
+      console.error(`File not found: ${filePath}`, err.message);
+      return res.status(404).send('index.html not found');
+    }
+    res.sendFile(filePath);
+  });
 });
 
 // Start server on configurable port
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 10000;
 app.listen(port, () => console.log(`Server running on port ${port}`));
 
 // Handle process termination to close database connection
