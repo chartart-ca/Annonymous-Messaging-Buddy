@@ -1,12 +1,18 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const { v4: uuidv4 } = require('uuid');
+const path = require('path');
+
+// Initialize Express app
 const app = express();
 app.use(express.json());
 app.use(express.static('public'));
 
-// Initialize SQLite database with a file for persistence
-const db = new sqlite3.Database('database.db', (err) => {
+// Configure database file path from environment variable or default to 'database.db'
+const DB_PATH = process.env.DB_PATH || 'database.db';
+
+// Initialize SQLite database with configurable file path
+const db = new sqlite3.Database(DB_PATH, (err) => {
   if (err) {
     console.error('Database connection error:', err.message);
   } else {
@@ -14,12 +20,20 @@ const db = new sqlite3.Database('database.db', (err) => {
   }
 });
 
+// Create necessary database tables
 db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS links (id TEXT PRIMARY KEY)`);
-  db.run(`CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, link_id TEXT, message TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+  db.run(`CREATE TABLE IF NOT EXISTS links (
+    id TEXT PRIMARY KEY
+  )`);
+  db.run(`CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    link_id TEXT,
+    message TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
 });
 
-// Create a new anonymous link
+// Endpoint to create a new anonymous link
 app.post('/create-link', (req, res) => {
   const linkId = uuidv4();
   db.run(`INSERT INTO links (id) VALUES (?)`, [linkId], (err) => {
@@ -30,7 +44,7 @@ app.post('/create-link', (req, res) => {
   });
 });
 
-// Send an anonymous message
+// Endpoint to send an anonymous message
 app.post('/send-message', (req, res) => {
   const { linkId, message } = req.body;
   if (!message || typeof message !== 'string') {
@@ -49,7 +63,7 @@ app.post('/send-message', (req, res) => {
   });
 });
 
-// Get messages for a link (only show messages from last 3 days)
+// Endpoint to retrieve messages for a link (limited to last 3 days)
 app.get('/messages/:linkId', (req, res) => {
   const { linkId } = req.params;
   db.get(`SELECT id FROM links WHERE id = ?`, [linkId], (err, row) => {
@@ -67,17 +81,20 @@ app.get('/messages/:linkId', (req, res) => {
 
 // Serve the send message page
 app.get('/send/:linkId', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Start server on configurable port
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Server running on port ${port}`));
 
-// Optional: Close database connection on process termination (e.g., Ctrl+C)
-// process.on('SIGINT', () => {
-//   db.close((err) => {
-//     if (err) console.error('Database close error:', err.message);
-//     console.log('Database connection closed.');
-//     process.exit(0);
-//   });
-// });
+// Handle process termination to close database connection
+process.on('SIGINT', () => {
+  db.close((err) => {
+    if (err) {
+      console.error('Database close error:', err.message);
+    }
+    console.log('Database connection closed.');
+    process.exit(0);
+  });
+});
