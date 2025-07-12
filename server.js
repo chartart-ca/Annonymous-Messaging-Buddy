@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const app = express();
 app.use(express.json());
 
-// Initialize SQLite database (in-memory for now; use Render's PostgreSQL for persistence)
+// Initialize SQLite database (in-memory for now)
 const db = new sqlite3.Database(':memory:', (err) => {
   if (err) {
     console.error('Database connection error:', err.message);
@@ -16,6 +16,9 @@ db.serialize(() => {
   db.run(`CREATE TABLE links (id TEXT PRIMARY KEY)`);
   db.run(`CREATE TABLE messages (id INTEGER PRIMARY KEY AUTOINCREMENT, link_id TEXT, message TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
 });
+
+// Test root route
+app.get('/', (req, res) => res.send('Hello from Anonymous Message Hub!'));
 
 // Create a new anonymous link
 app.post('/create-link', (req, res) => {
@@ -47,7 +50,7 @@ app.post('/send-message', (req, res) => {
 // Get messages for a link (only show messages from last 3 days)
 app.get('/messages/:linkId', (req, res) => {
   const { linkId } = req.params;
-  db.get(`SELECT id FROM links WHERE id = ?`, [linkId], (err, row) => {
+  db.get(`SELECT id FROM links WHERE id = ?`, [linkId], (err, root) => {
     if (err || !row) {
       return res.status(404).json({ error: 'Invalid link' });
     }
@@ -66,4 +69,4 @@ app.get('/send/:linkId', (req, res) => {
 });
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`Server running on port ${port}`));
+app.listen(port, '0.0.0.0', () => console.log(`Server running on port ${port}`));
