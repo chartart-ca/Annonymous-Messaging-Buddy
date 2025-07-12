@@ -64,9 +64,10 @@ app.get('/messages/:linkId', (req, res) => {
     db.all(`SELECT message, created_at FROM messages WHERE link_id = ? AND created_at >= datetime('now', '-3 days')`, [linkId], (err, rows) => {
       if (err) {
         return res.status(500).json({ error: 'Failed to fetch messages' });
+      }
+      res.json({ messages: rows });
     });
   });
-  res.json({ messages: rows });
 });
 
 // Serve the send message page (handled by frontend routing)
