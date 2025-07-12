@@ -41,11 +41,7 @@
       animation: scaleUp 0.5s ease-out forwards;
     }
     .glow-button {
-      transition: all 0.3s ease;
-    }
-    .glow-button:hover {
-      box-shadow: 0 0 15px #4A8BDF, 0 0 30px #A0006D;
-      transform: translateY(-2px);
+      box-shadow: 0 0 15px #A0006D, 0 0 30px #A0006D; /* Constant purple glow */
     }
     .message-card {
       background: rgba(74, 74, 74, 0.3);
@@ -115,12 +111,12 @@
       <h2 class="text-2xl font-semibold text-center text-gray-300">Send an Anonymous Message</h2>
       <textarea id="messageInput" class="w-full p-4 bg-meteor-gray text-gray-300 border border-nebula-blue rounded-lg placeholder-gray-400 focus:outline-none" placeholder="Type your anonymous message..." rows="4"></textarea>
       <button id="submitMessage" class="w-full bg-nebula-blue text-white py-3 rounded-lg glow-button">Send Message</button>
-      <button id="backToHome" class="w-full bg-meteor-gray text-white py-3 rounded-lg hover:bg-gray-600 transition duration-300">Back</button>
+      <button id="backToHome" class="w-full bg-meteor-gray text-white py-3 rounded-lg glow-button">Back</button>
     </div>
     <div id="viewMessagesSection" class="hidden space-y-4">
       <h2 class="text-2xl font-semibold text-center text-white">Your Messages</h2>
       <div id="messagesList" class="space-y-4"></div>
-      <button id="backToHomeFromMessages" class="w-full bg-meteor-gray text-white py-3 rounded-lg hover:bg-gray-600 transition duration-300">Back</button>
+      <button id="backToHomeFromMessages" class="w-full bg-meteor-gray text-white py-3 rounded-lg glow-button">Back</button>
     </div>
     <marquee behavior="scroll" direction="left" class="text-gray-400 text-sm mt-4" id="poweredBy">Powered by Anaypaji Solutions</marquee>
   </div>
