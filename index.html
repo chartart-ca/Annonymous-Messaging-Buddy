@@ -78,21 +78,6 @@
       }
     }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
-  <script>
-    particlesJS({
-      particles: {
-        number: { value: 80, density: { enable: true, value_area: 800 } },
-        color: { value: '#4A8BDF' },
-        shape: { type: 'circle' },
-        opacity: { value: 0.5, random: true },
-        size: { value: 3, random: true },
-        line_linked: { enable: false },
-        move: { enable: true, speed: 1, direction: 'none', random: true }
-      },
-      interactivity: { detect_on: 'canvas', events: { onhover: { enable: false } } }
-    });
-  </script>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4 relative">
   <div id="particles-js"></div>
@@ -120,134 +105,150 @@
     </div>
     <marquee behavior="scroll" direction="left" class="text-gray-400 text-sm mt-4" id="poweredBy">Powered by Anaypaji Solutions</marquee>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
   <script>
-    const createLinkBtn = document.getElementById('createLink');
-    const linkSection = document.getElementById('linkSection');
-    const linkOutput = document.getElementById('linkOutput');
-    const copyLinkBtn = document.getElementById('copyLink');
-    const viewMessagesBtn = document.getElementById('viewMessages');
-    const sendMessageSection = document.getElementById('sendMessage');
-    const homeSection = document.getElementById('home');
-    const messageInput = document.getElementById('messageInput');
-    const submitMessageBtn = document.getElementById('submitMessage');
-    const backToHomeBtn = document.getElementById('backToHome');
-    const viewMessagesSection = document.getElementById('viewMessagesSection');
-    const messagesList = document.getElementById('messagesList');
-    const backToHomeFromMessagesBtn = document.getElementById('backToHomeFromMessages');
+    document.addEventListener('DOMContentLoaded', () => {
+      particlesJS({
+        particles: {
+          number: { value: 80, density: { enable: true, value_area: 800 } },
+          color: { value: '#4A8BDF' },
+          shape: { type: 'circle' },
+          opacity: { value: 0.5, random: true },
+          size: { value: 3, random: true },
+          line_linked: { enable: false },
+          move: { enable: true, speed: 1, direction: 'none', random: true }
+        },
+        interactivity: { detect_on: 'canvas', events: { onhover: { enable: false } } }
+      });
 
-    // Load last link from localStorage on page load
-    window.addEventListener('load', () => {
-      const savedLinkId = localStorage.getItem('lastLinkId');
-      if (savedLinkId) {
-        const fullUrl = window.location.origin + `/send/${savedLinkId}`;
-        linkOutput.value = fullUrl;
-        linkSection.classList.remove('hidden');
-        createLinkBtn.classList.add('hidden');
-        linkSection.classList.add('fade-in-slow');
-      }
-    });
+      const createLinkBtn = document.getElementById('createLink');
+      const linkSection = document.getElementById('linkSection');
+      const linkOutput = document.getElementById('linkOutput');
+      const copyLinkBtn = document.getElementById('copyLink');
+      const viewMessagesBtn = document.getElementById('viewMessages');
+      const sendMessageSection = document.getElementById('sendMessage');
+      const homeSection = document.getElementById('home');
+      const messageInput = document.getElementById('messageInput');
+      const submitMessageBtn = document.getElementById('submitMessage');
+      const backToHomeBtn = document.getElementById('backToHome');
+      const viewMessagesSection = document.getElementById('viewMessagesSection');
+      const messagesList = document.getElementById('messagesList');
+      const backToHomeFromMessagesBtn = document.getElementById('backToHomeFromMessages');
 
-    // Generate unique link
-    createLinkBtn.addEventListener('click', async () => {
-      const response = await fetch('/create-link', { method: 'POST' });
-      const data = await response.json();
-      if (data.link) {
-        const fullUrl = window.location.origin + `/send/${data.link}`;
-        linkOutput.value = fullUrl;
-        localStorage.setItem('lastLinkId', data.link); // Save the linkId
-        linkSection.classList.remove('hidden');
-        createLinkBtn.classList.add('hidden');
-        linkSection.classList.add('fade-in-smooth');
-      } else {
-        alert('Failed to create link. Please try again.');
-      }
-    });
-
-    // Copy link to clipboard
-    copyLinkBtn.addEventListener('click', () => {
-      linkOutput.select();
-      document.execCommand('copy');
-      alert('Link copied!');
-    });
-
-    // Check if on send message page
-    const path = window.location.pathname;
-    if (path.startsWith('/send/')) {
-      homeSection.classList.add('hidden');
-      sendMessageSection.classList.remove('hidden');
-      sendMessageSection.classList.add('fade-in-slow');
-    }
-
-    // Submit anonymous message
-    submitMessageBtn.addEventListener('click', async () => {
-      const message = messageInput.value.trim();
-      if (!message) {
-        alert('Please enter a message!');
-        return;
-      }
-      const linkId = path.split('/send/')[1];
-      try {
-        const response = await fetch('/send-message', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ linkId, message })
-        });
-        const data = await response.json();
-        if (data.success) {
-          alert('Message sent!');
-          messageInput.value = '';
-        } else {
-          alert('Failed to send message. Please try again. Error: ' + (data.error || 'Unknown'));
+      // Load last link from localStorage on page load
+      window.addEventListener('load', () => {
+        const savedLinkId = localStorage.getItem('lastLinkId');
+        if (savedLinkId) {
+          const fullUrl = window.location.origin + `/send/${savedLinkId}`;
+          linkOutput.value = fullUrl;
+          linkSection.classList.remove('hidden');
+          createLinkBtn.classList.add('hidden');
+          linkSection.classList.add('fade-in-slow');
         }
-      } catch (error) {
-        alert('Failed to send message due to a network error. Please try again.');
-      }
-    });
+      });
 
-    // View messages
-    viewMessagesBtn.addEventListener('click', async () => {
-      const linkId = linkOutput.value.split('/send/')[1];
-      try {
-        const response = await fetch(`/messages/${linkId}`);
+      // Generate unique link
+      createLinkBtn.addEventListener('click', async () => {
+        const response = await fetch('/create-link', { method: 'POST' });
         const data = await response.json();
-        messagesList.innerHTML = '';
-        if (response.status === 404) {
-          alert('Link is invalid or expired. Please create a new link.');
+        if (data.link) {
+          const fullUrl = window.location.origin + `/send/${data.link}`;
+          linkOutput.value = fullUrl;
+          localStorage.setItem('lastLinkId', data.link); // Save the linkId
+          linkSection.classList.remove('hidden');
+          createLinkBtn.classList.add('hidden');
+          linkSection.classList.add('fade-in-smooth');
+        } else {
+          alert('Failed to create link. Please try again.');
+        }
+      });
+
+      // Copy link to clipboard
+      copyLinkBtn.addEventListener('click', () => {
+        linkOutput.select();
+        document.execCommand('copy');
+        alert('Link copied!');
+      });
+
+      // Check if on send message page
+      const path = window.location.pathname;
+      if (path.startsWith('/send/')) {
+        homeSection.classList.add('hidden');
+        sendMessageSection.classList.remove('hidden');
+        sendMessageSection.classList.add('fade-in-slow');
+      }
+
+      // Submit anonymous message
+      submitMessageBtn.addEventListener('click', async () => {
+        const message = messageInput.value.trim();
+        if (!message) {
+          alert('Please enter a message!');
+          return;
+        }
+        const linkId = path.split('/send/')[1];
+        try {
+          const response = await fetch('/send-message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ linkId, message })
+          });
+          const data = await response.json();
+          if (data.success) {
+            alert('Message sent!');
+            messageInput.value = '';
+          } else {
+            alert('Failed to send message. Please try again. Error: ' + (data.error || 'Unknown'));
+          }
+        } catch (error) {
+          alert('Failed to send message due to a network error. Please try again.');
+        }
+      });
+
+      // View messages
+      viewMessagesBtn.addEventListener('click', async () => {
+        const linkId = linkOutput.value.split('/send/')[1];
+        try {
+          const response = await fetch(`/messages/${linkId}`);
+          const data = await response.json();
+          messagesList.innerHTML = '';
+          if (response.status === 404) {
+            alert('Link is invalid or expired. Please create a new link.');
+            linkSection.classList.add('hidden');
+            createLinkBtn.classList.remove('hidden');
+            localStorage.removeItem('lastLinkId'); // Clear invalid link
+          } else if (data.messages.length === 0) {
+            messagesList.innerHTML = '<p class="text-gray-300">No messages yet.</p>';
+          } else {
+            data.messages.forEach((msg, index) => {
+              const msgElement = document.createElement('div');
+              msgElement.className = 'message-card p-4 animate-slide-in-smooth';
+              msgElement.style.animationDelay = `${index * 0.15}s`;
+              msgElement.innerHTML = `<p class="text-gray-300 whitespace-pre-wrap">${msg.message}</p><p class="text-sm text-gray-400">${new Date(msg.created_at).toLocaleString()}</p>`;
+              messagesList.appendChild(msgElement);
+            });
+          }
+        } catch (error) {
+          alert('Error fetching messages. Please try again or create a new link.');
           linkSection.classList.add('hidden');
           createLinkBtn.classList.remove('hidden');
-          localStorage.removeItem('lastLinkId'); // Clear invalid link
-        } else if (data.messages.length === 0) {
-          messagesList.innerHTML = '<p class="text-gray-300">No messages yet.</p>';
-        } else {
-          data.messages.forEach((msg, index) => {
-            const msgElement = document.createElement('div');
-            msgElement.className = 'message-card p-4 animate-slide-in-smooth';
-            msgElement.style.animationDelay = `${index * 0.15}s`;
-            msgElement.innerHTML = `<p class="text-gray-300 whitespace-pre-wrap">${msg.message}</p><p class="text-sm text-gray-400">${new Date(msg.created_at).toLocaleString()}</p>`;
-            messagesList.appendChild(msgElement);
-          });
+          localStorage.removeItem('lastLinkId'); // Clear on error
         }
-      } catch (error) {
-        alert('Error fetching messages. Please try again or create a new link.');
-        linkSection.classList.add('hidden');
-        createLinkBtn.classList.remove('hidden');
-        localStorage.removeItem('lastLinkId'); // Clear on error
-      }
-      homeSection.classList.add('hidden');
-      viewMessagesSection.classList.remove('hidden');
-      viewMessagesSection.classList.add('fade-in-slow');
-    });
+        homeSection.classList.add('hidden');
+        viewMessagesSection.classList.remove('hidden');
+        viewMessagesSection.classList.add('fade-in-slow');
+      });
 
-    // Back buttons
-    backToHomeBtn.addEventListener('click', () => {
-      sendMessageSection.classList.add('hidden');
-      homeSection.classList.remove('hidden');
-      homeSection.classList.add('fade-in-slow');
-    });
-    backToHomeFromMessagesBtn.addEventListener('click', () => {
-      viewMessagesSection.classList.add('hidden');
-      homeSection.classList.remove('hidden');
-      homeSection.classList.add('fade-in-slow');
+      // Back buttons
+      backToHomeBtn.addEventListener('click', () => {
+        sendMessageSection.classList.add('hidden');
+        homeSection.classList.remove('hidden');
+        homeSection.classList.add('fade-in-smooth');
+      });
+      backToHomeFromMessagesBtn.addEventListener('click', () => {
+        viewMessagesSection.classList.add('hidden');
+        homeSection.classList.remove('hidden');
+        homeSection.classList.add('fade-in-smooth');
+      });
     });
   </script>
 </body>
